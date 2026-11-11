@@ -226,7 +226,7 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
           </Button>
         )}
         <Link
-          href={`/a/${event.token}`}
+          href={`/a/${event.token}/oversikt`}
           className={cn(buttonVariants({ variant: "outline", size: "xl" }), !isOpen && "sm:col-span-2")}
         >
           Se hele listen

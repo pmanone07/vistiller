@@ -5,8 +5,8 @@ import { UserMenu } from "./user-menu";
 
 export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-1 flex-col">
+      <header className="sticky top-(--safe-top) z-30 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-4 px-4">
           <Logo href="/dashboard" />
           <DashboardNav className="ml-auto hidden sm:flex" />

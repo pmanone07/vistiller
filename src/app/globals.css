@@ -135,6 +135,22 @@
   }
   body {
     @apply bg-background text-foreground;
+    padding-top: var(--safe-top);
+  }
+  :root {
+    /* Height of the status bar / notch when the page is drawn edge-to-edge
+       (installed PWA, Capacitor shell). Capacitor injects --safe-area-inset-top;
+       browsers expose env(). Zero in a normal browser tab. */
+    --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  }
+  /* Opaque strip behind the status bar so scrolled content never shows through it. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: var(--safe-top);
+    background: var(--background);
+    z-index: 40;
   }
   html {
     @apply font-sans;

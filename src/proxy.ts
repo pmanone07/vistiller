@@ -50,12 +50,11 @@ export async function proxy(request: NextRequest) {
     return applySession(NextResponse.redirect(loginUrl));
   }
 
-  if (isSignedIn && (pathname === "/login" || pathname === "/register")) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    dashboardUrl.search = "";
-    return applySession(NextResponse.redirect(dashboardUrl));
-  }
+  // Signed-in visitors to /login and /register are redirected by the pages
+  // themselves (RedirectIfSignedIn), using the same server-verified check as the
+  // dashboard. Doing it here on the optimistic check caused a redirect loop when
+  // the two disagreed, and an HTTP redirect of an in-app navigation makes the
+  // Next client fetch the target twice.
 
   return response;
 }

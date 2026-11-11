@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AuthCard } from "../auth-card";
+import { RedirectIfSignedIn } from "../redirect-if-signed-in";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Logg inn" };
@@ -20,6 +21,9 @@ export default function LoginPage() {
         </>
       }
     >
+      <Suspense fallback={null}>
+        <RedirectIfSignedIn />
+      </Suspense>
       <Suspense>
         <LoginForm />
       </Suspense>

@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/a/[token]">): Pro
 
 export default function PublicEventPage({ params }: PageProps<"/a/[token]">) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex flex-1 flex-col">
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 pt-6 pb-36 sm:pt-10">
         <Suspense fallback={<PublicEventSkeleton />}>
           <PublicEventLoader params={params} />

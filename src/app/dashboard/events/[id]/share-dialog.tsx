@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CopyButton } from "@/components/copy-button";
+import { copyText } from "@/lib/clipboard";
 import { formatEventDate } from "@/lib/format";
 
 interface Props {
@@ -50,10 +51,9 @@ export function ShareDialog({ open, onOpenChange, url, title, eventDate }: Props
   }
 
   async function copyMessage() {
-    try {
-      await navigator.clipboard.writeText(message);
+    if (await copyText(message)) {
       toast.success("Meldingen er kopiert. Lim den inn i Spond, Messenger eller SMS.");
-    } catch {
+    } else {
       toast.error("Kunne ikke kopiere meldingen.");
     }
   }

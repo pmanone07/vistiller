@@ -24,7 +24,7 @@ const DEMO_ITEMS = [
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <Logo />
         <nav className="flex items-center gap-2">
@@ -37,7 +37,7 @@ export default function HomePage() {
         </nav>
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-clip">
         {/* Hero */}
         <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-8 pb-16 sm:px-6 lg:grid-cols-2 lg:pt-16">
           <div className="space-y-6">

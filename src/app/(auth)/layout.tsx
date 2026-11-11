@@ -2,7 +2,7 @@ import { Logo } from "@/components/logo";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-dvh flex-col bg-gradient-to-b from-brand-muted to-background">
+    <div className="flex flex-1 flex-col bg-gradient-to-b from-brand-muted to-background">
       <header className="px-4 pt-6 sm:px-8">
         <Logo />
       </header>

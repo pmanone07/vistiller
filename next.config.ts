@@ -8,6 +8,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The Capacitor shell loads the dev server from another origin: 10.0.2.2 in the
+  // Android emulator, the PC's LAN address on a physical phone. Without these,
+  // Next refuses its dev socket for that origin and streamed content never leaves
+  // the loading skeletons. Dev-only setting; covers the usual home/office ranges.
+  allowedDevOrigins: ["10.*.*.*", "192.168.*.*", "172.*.*.*"],
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,

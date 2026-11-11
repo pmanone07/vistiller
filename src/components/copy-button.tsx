@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { copyText } from "@/lib/clipboard";
 
 type Props = Omit<React.ComponentProps<typeof Button>, "onClick"> & {
   value: string;
@@ -15,12 +16,11 @@ export function CopyButton({ value, label = "Kopier", copiedLabel = "Kopiert!", 
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
+    if (await copyText(value)) {
       setCopied(true);
       toast.success("Lenken er kopiert");
       window.setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       toast.error("Kunne ikke kopiere. Marker lenken og kopier manuelt.");
     }
   }

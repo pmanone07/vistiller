@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { AuthCard } from "../auth-card";
+import { RedirectIfSignedIn } from "../redirect-if-signed-in";
 import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = { title: "Opprett konto" };
@@ -19,6 +21,9 @@ export default function RegisterPage() {
         </>
       }
     >
+      <Suspense fallback={null}>
+        <RedirectIfSignedIn />
+      </Suspense>
       <RegisterForm />
     </AuthCard>
   );

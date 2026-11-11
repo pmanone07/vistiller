@@ -131,6 +131,7 @@ await test("public event view has items and no contact info", async () => {
     assert.equal(ev.title, "Loppemarked");
     assert.equal(ev.items.length, 3);
     assert.equal(ev.items[0].allocated, 0);
+    assert.equal(ev.items[0].delivered, 0);
     assert.equal((await one(`select public.get_public_event('wrong-token-123') as e`)).e, null);
   });
 });
@@ -236,6 +237,10 @@ await test("delivered contributions can't be changed by the parent", async () =>
     await q(`update public.contributions set delivered_at = now() where item_id = $1 and quantity = 3`, [cakeId]);
   });
   await as("service_role", null, async () => {
+    // The public view reports the delivered quantity per item, nothing more.
+    const ev = (await one(`select public.get_public_event($1) as e`, [token])).e;
+    assert.equal(ev.items.find((i) => i.id === cakeId).delivered, 3);
+    assert.equal(ev.items.find((i) => i.id === waffleId).delivered, 0);
     await rejects(q(`select public.cancel_public_signup($1)`, [editToken]), "KF_ALREADY_DELIVERED");
     await rejects(
       q(`select public.update_public_signup($1, 'Kari', null, null, $2::jsonb)`, [

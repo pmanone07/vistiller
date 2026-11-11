@@ -76,6 +76,11 @@ export interface PublicItem {
   allow_extra: boolean;
   sort_order: number;
   allocated: number;
+  /**
+   * Quantity the organizer has marked as delivered. Missing until the
+   * 20261112000000_public_delivered migration has been applied.
+   */
+  delivered?: number;
 }
 
 export interface PublicEvent {
