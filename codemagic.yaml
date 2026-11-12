@@ -1,16 +1,18 @@
 
 workflows:
   korpsfix-ios:
-    name: KorpsFix iOS Build
+    name: KorpsFix iOS Simulator Preview
     instance_type: mac_mini_m2
     max_build_duration: 60
 
     environment:
       node: 22
+      xcode: latest
 
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: |
+          npm ci
 
       - name: Prepare Capacitor assets
         script: |
@@ -18,22 +20,32 @@ workflows:
           echo '<!doctype html><html><body>KorpsFix</body></html>' > capacitor-web/index.html
 
       - name: Sync iOS project
-        script: npx cap sync ios
+        script: |
+          npx cap sync ios
 
       - name: Install CocoaPods
         script: |
           cd ios/App
-          if [ -f Podfile ]; then pod install; fi
+          if [ -f Podfile ]; then
+            pod install
+          fi
 
-      - name: Build iOS app
+      - name: Build iOS Simulator app
         script: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj \
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios" \
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Verify simulator app
+        script: |
+          test -d "$CM_BUILD_DIR/build/ios/Build/Products/Debug-iphonesimulator/App.app"
+
     artifacts:
+      - build/ios/Build/Products/Debug-iphonesimulator/App.app
       - /tmp/xcodebuild_logs/*.log
