@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'korpsfix',
   webDir: 'capacitor-web',
   server: {
-    url: 'http://10.0.2.2:3000',
-    cleartext: true
-  }
+  url: 'https://korpsfix.vercel.app',
+  cleartext: false,
+},
 };
 
 export default config;
