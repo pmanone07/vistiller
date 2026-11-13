@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getEventDetail } from "@/server/dashboard";
 import { DeliveryOverview } from "./delivery-overview";
 
-export const metadata: Metadata = { title: "Leveringsoversikt" };
+export const metadata: Metadata = { title: "Avkrysning" };
 
 export default function DeliveryPage({ params }: PageProps<"/dashboard/events/[id]/delivery">) {
   return (
@@ -22,7 +22,7 @@ async function DeliveryLoader({ params }: Pick<PageProps<"/dashboard/events/[id]
 
 function DeliverySkeleton() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6" aria-busy="true" aria-label="Laster leveringsoversikten">
+    <div className="mx-auto max-w-2xl space-y-6" aria-busy="true" aria-label="Laster avkrysningslisten">
       <div className="space-y-2">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-8 w-56" />

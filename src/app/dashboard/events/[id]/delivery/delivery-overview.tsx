@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, PackageCheck, PartyPopper, Phone, Users } from "lucide-react";
 import { formatDateTime, formatNumber, percent } from "@/lib/format";
 import { groupItems } from "@/lib/group";
+import { doneLabel } from "@/lib/kinds";
+import { useAutoRefresh } from "@/components/public/use-auto-refresh";
 import { cn } from "@/lib/utils";
 import type { ContributionWithSignup } from "@/lib/types";
 import type { AdminItem, EventDetail } from "@/server/dashboard";
@@ -16,7 +18,7 @@ type Filter = "missing" | "delivered" | "all";
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "missing", label: "Mangler" },
-  { key: "delivered", label: "Levert" },
+  { key: "delivered", label: "Krysset av" },
   { key: "all", label: "Alle" },
 ];
 
@@ -27,6 +29,8 @@ const matches = (c: ContributionWithSignup, filter: Filter) =>
 export function DeliveryOverview({ detail }: { detail: EventDetail }) {
   const { event, categories, items } = detail;
   const [filter, setFilter] = useState<Filter>("missing");
+  // New sign-ups show up here by themselves while the organizer is ticking off.
+  useAutoRefresh(5000);
 
   const total = detail.stats.contributionCount;
   const delivered = detail.stats.deliveredCount;
@@ -57,7 +61,7 @@ export function DeliveryOverview({ detail }: { detail: EventDetail }) {
         >
           <ArrowLeft className="size-4 shrink-0" /> <span className="truncate">{event.title}</span>
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Leveringsoversikt</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Avkrysning</h1>
       </div>
 
       {total === 0 ? (
@@ -68,7 +72,7 @@ export function DeliveryOverview({ detail }: { detail: EventDetail }) {
           <div className="space-y-1">
             <h2 className="text-lg font-semibold">Ingen har meldt seg på ennå</h2>
             <p className="max-w-sm text-muted-foreground">
-              Når foreldre melder seg på, ser du her hva som er levert og hva som mangler.
+              Når deltakerne melder seg på, krysser du av her etter hvert som ting blir levert og folk møter opp.
             </p>
           </div>
           <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-primary hover:underline">
@@ -111,15 +115,15 @@ export function DeliveryOverview({ detail }: { detail: EventDetail }) {
               <div className="flex flex-col items-center gap-3 rounded-2xl bg-success-muted px-6 py-10 text-center">
                 <PartyPopper className="size-8 text-success" />
                 <div className="space-y-1">
-                  <h2 className="text-lg font-semibold">Alt er levert!</h2>
+                  <h2 className="text-lg font-semibold">Alt er krysset av!</h2>
                   <p className="text-sm text-muted-foreground">
-                    Alle {formatNumber(total)} bidrag er krysset av som levert.
+                    Alle {formatNumber(total)} bidrag er levert eller utført.
                   </p>
                 </div>
               </div>
             ) : (
               <p className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-                Ingenting er levert ennå.
+                Ingenting er krysset av ennå.
               </p>
             )
           ) : (
@@ -152,7 +156,7 @@ function Summary({ delivered, total, remaining }: { delivered: number; total: nu
   const done = remaining === 0;
   return (
     <section
-      aria-label="Status for levering"
+      aria-label="Status for avkrysning"
       className={cn("rounded-2xl p-5 ring-1", done ? "bg-success-muted ring-success/20" : "bg-card ring-foreground/10")}
     >
       <p className="flex flex-wrap items-baseline gap-x-2">
@@ -160,7 +164,7 @@ function Summary({ delivered, total, remaining }: { delivered: number; total: nu
           {formatNumber(delivered)}
           <span className="text-2xl font-semibold text-muted-foreground"> av {formatNumber(total)}</span>
         </span>
-        <span className="text-lg font-medium">bidrag levert</span>
+        <span className="text-lg font-medium">bidrag krysset av</span>
       </p>
       <div
         className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted"
@@ -168,7 +172,7 @@ function Summary({ delivered, total, remaining }: { delivered: number; total: nu
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={delivered}
-        aria-label={`${delivered} av ${total} bidrag levert`}
+        aria-label={`${delivered} av ${total} bidrag krysset av`}
       >
         <div
           className={cn("h-full rounded-full transition-all duration-500", done ? "bg-success" : "bg-primary")}
@@ -178,7 +182,7 @@ function Summary({ delivered, total, remaining }: { delivered: number; total: nu
       <p className={cn("mt-2 text-sm font-medium", done ? "text-success" : "text-foreground")}>
         {done ? (
           <span className="inline-flex items-center gap-1">
-            <CheckCircle2 className="size-4" /> Alt er levert
+            <CheckCircle2 className="size-4" /> Alt er krysset av
           </span>
         ) : (
           `${formatNumber(remaining)} mangler`
@@ -200,7 +204,7 @@ function DeliveryItemCard({ item, rows }: { item: AdminItem; rows: ContributionW
           <h3 className="font-semibold leading-snug">{item.name}</h3>
           <p className={cn("inline-flex items-center gap-1 text-sm tabular-nums", complete ? "font-medium text-success" : "text-muted-foreground")}>
             {complete && <CheckCircle2 className="size-4" />}
-            Levert{" "}
+            {doneLabel(item.kind)}{" "}
             <span className={cn("font-medium", !complete && "text-foreground")}>{formatNumber(deliveredQty)}</span> av{" "}
             {formatNumber(signedUp)} {item.unit}
           </p>
@@ -228,7 +232,7 @@ function DeliveryRow({ contribution: c, unit }: { contribution: ContributionWith
   // Ticked rows can vanish from the "Mangler" filter, so offer a quick undo.
   const onToggled = (nowDelivered: boolean) => {
     if (!nowDelivered) return;
-    toast.success(`${name} er markert som levert`, {
+    toast.success(`${name} er krysset av`, {
       action: {
         label: "Angre",
         onClick: async () => {

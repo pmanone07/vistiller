@@ -3,22 +3,26 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicFooter } from "@/components/public/public-footer";
-import { getPublicEvent } from "@/server/public-signups";
+import { getPublicEvent, isValidToken } from "@/server/public-signups";
 import { formatEventDate } from "@/lib/format";
+import { InvalidLink } from "./invalid-link";
 import { PublicEventView } from "./public-event-view";
 
 export async function generateMetadata({ params }: PageProps<"/a/[token]">): Promise<Metadata> {
   const { token } = await params;
-  const event = await getPublicEvent(token);
-  if (!event) return { title: "Fant ikke arrangementet", robots: { index: false, follow: false } };
+  // A failed lookup must not break the metadata: the page itself renders the
+  // error (see error.tsx), so fall back to a neutral title here.
+  const event = await getPublicEvent(token).catch(() => null);
+  if (!event) return { title: "Bidragsliste", robots: { index: false, follow: false } };
 
   const date = formatEventDate(event.event_date);
-  const description = `${event.organization_name}${date ? ` · ${date}` : ""}. Se hva som trengs og meld deg på uten innlogging.`;
+  const description = `${event.organization_name}${date ? ` · ${date}` : ""}. Se hva som trengs, og meld deg på uten innlogging.`;
   return {
     title: event.title,
     description,
     robots: { index: false, follow: false },
-    openGraph: { title: `${event.title} – hvem tar med hva?`, description },
+    // A page-level openGraph replaces the root one, so the share image is repeated here.
+    openGraph: { title: `${event.title} – bli med og bidra`, description, images: ["/opengraph-image.png"] },
   };
 }
 
@@ -37,6 +41,9 @@ export default function PublicEventPage({ params }: PageProps<"/a/[token]">) {
 
 async function PublicEventLoader({ params }: { params: PageProps<"/a/[token]">["params"] }) {
   const { token } = await params;
+  // Three distinct outcomes: malformed link, unknown/archived event (not-found.tsx)
+  // and server/database failure (thrown, handled by error.tsx).
+  if (!isValidToken(token)) return <InvalidLink />;
   const event = await getPublicEvent(token);
   if (!event) notFound();
   return <PublicEventView event={event} />;

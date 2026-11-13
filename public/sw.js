@@ -1,10 +1,10 @@
-// Korpsfix service worker.
+// ViStiller service worker.
 //
 // Deliberately minimal: lists and dashboards must always show live data, so we
 // never serve them from cache. We only precache an offline fallback page and
 // static icons so the app is installable and fails gracefully without network.
 
-const CACHE = "korpsfix-v1";
+const CACHE = "vistiller-v1";
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon.svg"];
 

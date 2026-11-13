@@ -13,7 +13,7 @@ export default function OfflinePage() {
       </div>
       <h1 className="text-xl font-semibold">Ingen nettilkobling</h1>
       <p className="text-muted-foreground">
-        Korpsfix trenger internett for å vise oppdaterte lister. Sjekk tilkoblingen og prøv igjen.
+        ViStiller trenger internett for å vise oppdaterte lister. Sjekk tilkoblingen og prøv igjen.
       </p>
     </main>
   );

@@ -4,14 +4,15 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AutoRefresh } from "@/components/public/auto-refresh";
 import { PublicFooter } from "@/components/public/public-footer";
-import { getPublicEvent } from "@/server/public-signups";
+import { getPublicEvent, isValidToken } from "@/server/public-signups";
+import { InvalidLink } from "../invalid-link";
 import { EventOverview } from "./event-overview";
 
 export async function generateMetadata({ params }: PageProps<"/a/[token]/oversikt">): Promise<Metadata> {
   const { token } = await params;
-  const event = await getPublicEvent(token);
+  const event = await getPublicEvent(token).catch(() => null);
   return {
-    title: event ? `${event.title} – oversikt` : "Fant ikke arrangementet",
+    title: event ? `${event.title} – oversikt` : "Bidragsliste",
     robots: { index: false, follow: false },
   };
 }
@@ -32,6 +33,7 @@ export default function EventOverviewPage({ params }: PageProps<"/a/[token]/over
 
 async function OverviewLoader({ params }: { params: PageProps<"/a/[token]/oversikt">["params"] }) {
   const { token } = await params;
+  if (!isValidToken(token)) return <InvalidLink />;
   const event = await getPublicEvent(token);
   if (!event) notFound();
   return (

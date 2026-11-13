@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 /**
  * Keeps the list fresh while it's open: re-fetches server data every
  * `intervalMs` while the tab is visible, and right away when it becomes visible
- * again (e.g. coming back from Spond). Client state such as the current
+ * again (e.g. coming back from a chat app). Client state such as the current
  * selection is preserved by router.refresh().
  */
 export function useAutoRefresh(intervalMs = 20000, enabled = true) {

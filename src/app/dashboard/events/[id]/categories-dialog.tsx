@@ -17,7 +17,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { Category } from "@/lib/types";
 import { createCategory, deleteCategory, renameCategory } from "../../actions";
 
-const SUGGESTED = ["Kaker og bakst", "Mat og drikke", "Kioskvarer", "Utstyr", "Diverse"];
+const SUGGESTED = ["Mat og drikke", "Oppgaver", "Vakter", "Transport", "Utstyr"];
 
 interface Props {
   open: boolean;
@@ -105,7 +105,7 @@ export function CategoriesDialog({ open, onOpenChange, eventId, categories }: Pr
         <DialogHeader>
           <DialogTitle className="text-lg">Kategorier</DialogTitle>
           <DialogDescription>
-            Valgfritt. Grupper bidragene, f.eks. «Kaker og bakst» og «Utstyr». Små arrangementer klarer seg fint uten.
+            Valgfritt. Grupper listen, f.eks. «Mat og drikke» og «Vakter». Små arrangementer klarer seg fint uten.
           </DialogDescription>
         </DialogHeader>
 

@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EventHeader } from "@/components/public/event-header";
 import { formatNumber } from "@/lib/format";
 import { groupItems } from "@/lib/group";
+import { doneLabel } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 import type { PublicEvent, PublicItem } from "@/lib/types";
 
@@ -27,7 +28,7 @@ export function EventOverview({ event }: { event: PublicEvent }) {
 
       {total === 0 ? (
         <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-          Arrangøren har ikke lagt inn noen bidrag ennå.
+          Arrangøren har ikke lagt inn noe i listen ennå.
         </div>
       ) : (
         <>
@@ -38,7 +39,7 @@ export function EventOverview({ event }: { event: PublicEvent }) {
             )}
           >
             <SummaryStat label="Dekket" value={covered} total={total} />
-            {showDelivered && <SummaryStat label="Levert" value={deliveredCount} total={total} />}
+            {showDelivered && <SummaryStat label="Krysset av" value={deliveredCount} total={total} />}
             <SummaryStat label="Mangler" value={missing} total={total} />
           </dl>
 
@@ -132,7 +133,7 @@ function OverviewItem({ item, showDelivered }: { item: PublicItem; showDelivered
 
       <dl className={cn("mt-3 grid gap-2 text-sm", showDelivered ? "grid-cols-3" : "grid-cols-2")}>
         <Figure label="Registrert" value={item.allocated} suffix={`av ${formatNumber(target)} ${item.unit}`} />
-        {showDelivered && <Figure label="Levert" value={delivered} suffix={item.unit} tone="success" />}
+        {showDelivered && <Figure label={doneLabel(item.kind)} value={delivered} suffix={item.unit} tone="success" />}
         <Figure
           label="Mangler"
           value={remaining}

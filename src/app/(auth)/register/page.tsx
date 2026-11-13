@@ -11,7 +11,7 @@ export default function RegisterPage() {
   return (
     <AuthCard
       title="Kom i gang gratis"
-      subtitle="Lag din første bidragsliste på et par minutter."
+      subtitle="Opprett ditt første arrangement på et par minutter."
       footer={
         <>
           Har du allerede konto?{" "}

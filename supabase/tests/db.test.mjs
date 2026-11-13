@@ -1,4 +1,4 @@
-// Database tests for the Korpsfix schema.
+// Database tests for the ViStiller schema.
 //
 // Runs the migration in an in-process Postgres (PGlite) with a minimal stub of
 // the Supabase environment (auth schema, roles, auth.uid()) and verifies RLS,
@@ -74,7 +74,7 @@ async function test(name, fn) {
   }
 }
 
-console.log("Korpsfix database tests");
+console.log("ViStiller database tests");
 
 let orgId, eventId, token, cakeId, waffleId, coffeeId;
 
@@ -393,8 +393,110 @@ await test("rate limiting by ip hash", async () => {
   });
 });
 
+await test("event types and contribution kinds: tasks, shifts and transport in one list", async () => {
+  let cupId, cupToken, shiftId;
+  await as("authenticated", U1, async () => {
+    const ev = await one(
+      `insert into public.events (organization_id, title, event_type) values ($1, 'Fotballcup', 'sports')
+       returning id, public_token, event_type`,
+      [orgId],
+    );
+    cupId = ev.id;
+    cupToken = ev.public_token;
+    assert.equal(ev.event_type, "sports");
+    // The type is optional and can be changed or cleared later.
+    await q(`update public.events set event_type = 'dugnad' where id = $1`, [cupId]);
+    await q(`update public.events set event_type = null where id = $1`, [cupId]);
+    await q(`update public.events set event_type = 'sports' where id = $1`, [cupId]);
+    await rejects(q(`update public.events set event_type = 'ukjent' where id = $1`, [cupId]), "check");
+
+    // Old-style insert without a kind is still a thing to bring.
+    const cake = await one(
+      `insert into public.items (event_id, name, target_quantity, unit) values ($1, 'Kaker', 6, 'stk') returning kind, starts_at`,
+      [cupId],
+    );
+    assert.equal(cake.kind, "bring");
+    assert.equal(cake.starts_at, null);
+
+    shiftId = (await one(
+      `insert into public.items (event_id, name, target_quantity, unit, kind, starts_at, ends_at)
+       values ($1, 'Kioskvakt', 2, 'personer', 'shift', '10:00', '12:00') returning id`,
+      [cupId],
+    )).id;
+    await q(
+      `insert into public.items (event_id, name, target_quantity, unit, kind) values
+         ($1, 'Rydding', 4, 'personer', 'task'), ($1, 'Kjøring til kamp', 3, 'biler', 'transport')`,
+      [cupId],
+    );
+    await rejects(
+      q(`insert into public.items (event_id, name, target_quantity, kind) values ($1, 'X', 1, 'annet')`, [cupId]),
+      "check",
+    );
+  });
+
+  await as("service_role", null, async () => {
+    const ev = (await one(`select public.get_public_event($1) as e`, [cupToken])).e;
+    assert.equal(ev.event_type, "sports");
+    assert.deepEqual(ev.items.map((i) => i.kind).sort(), ["bring", "shift", "task", "transport"]);
+    const shift = ev.items.find((i) => i.id === shiftId);
+    assert.equal(shift.starts_at, "10:00");
+    assert.equal(shift.ends_at, "12:00");
+    assert.equal(ev.items.find((i) => i.kind === "task").starts_at, null);
+
+    // Signing up for a shift works like any other item, including the limit.
+    const signup = (items) =>
+      one(`select public.create_public_signup($1, 'Ola', null, null, $2::jsonb) as r`, [cupToken, JSON.stringify(items)]);
+    await signup([{ item_id: shiftId, quantity: 2 }]);
+    await rejects(signup([{ item_id: shiftId, quantity: 1 }]), "KF_NOT_ENOUGH_REMAINING");
+    const after = (await one(`select public.get_public_event($1) as e`, [cupToken])).e;
+    assert.equal(after.items.find((i) => i.id === shiftId).allocated, 2);
+  });
+
+  // The migration is additive and can be run again without changing anything.
+  const before = await q(`select id, kind, starts_at from public.items where event_id = $1 order by id`, [cupId]);
+  await db.exec(readFileSync(join(migrationsDir, "20261113000000_event_types_and_item_kinds.sql"), "utf8"));
+  assert.deepEqual(await q(`select id, kind, starts_at from public.items where event_id = $1 order by id`, [cupId]), before);
+});
+
+await test("share link opens open and closed events, but not archived ones or old tokens", async () => {
+  let shareId, shareToken, newToken;
+  await as("authenticated", U1, async () => {
+    const ev = await one(
+      `insert into public.events (organization_id, title) values ($1, 'Sommerkonsert') returning id, public_token`,
+      [orgId],
+    );
+    shareId = ev.id;
+    shareToken = ev.public_token;
+    // Every new event gets a token the app accepts (see TOKEN_RE in public-signups.ts).
+    assert.match(shareToken, /^[A-Za-z0-9_-]{12,64}$/);
+    await q(`insert into public.items (event_id, name, target_quantity, unit) values ($1, 'Kake', 5, 'stk')`, [shareId]);
+  });
+  const publicEvent = (t) =>
+    as("service_role", null, async () => (await one(`select public.get_public_event($1) as e`, [t])).e);
+  const setStatus = (status) =>
+    as("authenticated", U1, () => q(`update public.events set status = $2 where id = $1`, [shareId, status]));
+
+  const open = await publicEvent(shareToken);
+  assert.equal(open.title, "Sommerkonsert");
+  assert.equal(open.token, shareToken);
+  assert.equal(open.items.length, 1);
+
+  await setStatus("closed");
+  assert.equal((await publicEvent(shareToken)).status, "closed");
+
+  await setStatus("archived");
+  assert.equal(await publicEvent(shareToken), null);
+
+  await setStatus("open");
+  await as("authenticated", U1, async () => {
+    newToken = (await one(`select public.regenerate_event_token($1) as t`, [shareId])).t;
+  });
+  assert.equal(await publicEvent(shareToken), null);
+  assert.equal((await publicEvent(newToken)).title, "Sommerkonsert");
+});
+
 await test("seed data loads", async () => {
-  await db.exec(`insert into auth.users (id, email) values ('33333333-3333-3333-3333-333333333333', 'demo@korpsfix.no')`);
+  await db.exec(`insert into auth.users (id, email) values ('33333333-3333-3333-3333-333333333333', 'demo@vistiller.com')`);
   await db.exec(readFileSync(join(here, "..", "seed.sql"), "utf8"));
   await as("service_role", null, async () => {
     const ev = (await one(`select public.get_public_event('demo-loppemarked-2027') as e`)).e;

@@ -13,7 +13,7 @@ const MESSAGES: Record<string, string> = {
   KF_NO_ITEMS: "Velg minst ett bidrag.",
   KF_RATE_LIMITED: "Du har sendt mange påmeldinger på kort tid. Vent litt og prøv igjen.",
   KF_SIGNUP_NOT_FOUND: "Fant ikke påmeldingen. Den kan være slettet.",
-  KF_ALREADY_DELIVERED: "Bidrag som allerede er levert kan ikke endres. Kontakt arrangøren.",
+  KF_ALREADY_DELIVERED: "Det arrangøren har krysset av som levert eller utført, kan ikke endres. Kontakt arrangøren.",
   KF_NOT_AUTHENTICATED: "Du må være logget inn.",
   KF_TOO_MANY_ORGANIZATIONS: "Du kan ikke opprette flere organisasjoner.",
   KF_INVALID_NAME_ORG: "Navnet må være mellom 1 og 100 tegn.",

@@ -8,7 +8,7 @@ interface PersonRow {
   lines: { itemName: string; quantity: number; unit: string; delivered: boolean }[];
 }
 
-/** "Hvem tar med hva": contributions grouped per person, sorted by name. */
+/** "Hvem gjør hva": contributions grouped per person, sorted by name. */
 export function PeopleList({ items }: { items: AdminItem[] }) {
   const people = new Map<string, PersonRow>();
   for (const item of items) {

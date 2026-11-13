@@ -1,5 +1,5 @@
 -- =============================================================================
--- Korpsfix – harden column grants for organizers
+-- ViStiller – harden column grants for organizers
 --
 -- Design notes
 -- * The init migration grants `authenticated` table-wide SELECT/INSERT/UPDATE/

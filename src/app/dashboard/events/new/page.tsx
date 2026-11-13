@@ -17,7 +17,7 @@ export default function NewEventPage() {
           <ArrowLeft className="size-4" /> Arrangementer
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Nytt arrangement</h1>
-        <p className="text-muted-foreground">Etterpå legger du inn hva dere trenger, og deler lenken.</p>
+        <p className="text-muted-foreground">Etterpå legger du inn oppgaver og bidrag, og deler lenken.</p>
       </div>
       <div className="rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
         <Suspense fallback={<FormSkeleton />}>

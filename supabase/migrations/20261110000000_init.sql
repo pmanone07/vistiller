@@ -1,12 +1,12 @@
 -- =============================================================================
--- Korpsfix – initial schema
+-- ViStiller – initial schema
 --
 -- Design notes
 -- * Organizers (authenticated users) work directly against the tables, guarded
 --   by Row Level Security: they only ever see organizations they are members of.
 -- * The public (parents/volunteers) never touch the tables directly. All public
 --   reads/writes go through SECURITY DEFINER functions that are only executable
---   by the `service_role` (i.e. the Korpsfix server). The server adds rate
+--   by the `service_role` (i.e. the ViStiller server). The server adds rate
 --   limiting, honeypot checks and validation before calling them.
 -- * A "signup" is one submission by one person (name + contact info + private
 --   edit token). A signup has one or more "contributions" (item + quantity).
@@ -352,7 +352,7 @@ end;
 $$;
 
 -- -----------------------------------------------------------------------------
--- Public functions (service_role only – called by the Korpsfix server)
+-- Public functions (service_role only – called by the ViStiller server)
 -- -----------------------------------------------------------------------------
 
 -- Public JSON representation of an event. Never includes contact details.

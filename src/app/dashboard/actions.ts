@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/errors";
+import { EVENT_TYPE_VALUES, ITEM_KIND_VALUES } from "@/lib/kinds";
+import { findTemplate, type EventTemplate } from "@/lib/templates";
 import type { ActionResult } from "@/lib/types";
 
 /**
@@ -25,6 +27,15 @@ const fail = (error: { message?: string; details?: string | null; code?: string 
   ok: false,
   error: dbErrorMessage(error),
 });
+
+/**
+ * True when the database does not have a column the app tried to write, i.e.
+ * the 20261113000000_event_types_and_item_kinds migration has not been run yet.
+ * The callers then fall back to the columns that have always existed.
+ */
+const isMissingColumn = (error: { code?: string } | null) => error?.code === "PGRST204" || error?.code === "42703";
+const NEEDS_MIGRATION =
+  "Dette krever en oppdatering av databasen som ikke er kjørt ennå. Kontakt den som drifter ViStiller.";
 
 const uuid = z.uuid();
 const optionalText = (max: number) =>
@@ -74,29 +85,103 @@ const eventSchema = z.object({
     .optional()
     .transform((v) => v || null)
     .pipe(z.iso.date("Ugyldig dato.").nullable()),
+  event_type: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => v || null)
+    .pipe(z.enum(EVENT_TYPE_VALUES, "Ugyldig arrangementstype.").nullable()),
 });
 export type EventInput = z.input<typeof eventSchema>;
 
-export async function createEvent(organizationId: string, input: EventInput): Result<{ id: string }> {
+/**
+ * Creates an event, optionally pre-filled from a template (categories and
+ * items the organizer can change afterwards).
+ */
+export async function createEvent(
+  organizationId: string,
+  input: EventInput,
+  templateId?: string | null,
+): Result<{ id: string }> {
   const parsed = eventSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   if (!uuid.safeParse(organizationId).success) return { ok: false, error: "Velg organisasjon." };
 
   const { supabase } = await requireUser();
-  const { data, error } = await supabase
+  const { event_type, ...base } = parsed.data;
+  const row: Record<string, unknown> = { organization_id: organizationId, ...base };
+  let { data, error } = await supabase
     .from("events")
-    .insert({ organization_id: organizationId, ...parsed.data })
+    .insert(event_type ? { ...row, event_type } : row)
     .select("id")
     .single();
-  if (error) return fail(error);
+  // The type is optional, so an event can still be created on a database without the column.
+  if (error && event_type && isMissingColumn(error)) {
+    ({ data, error } = await supabase.from("events").insert(row).select("id").single());
+  }
+  if (error || !data) return fail(error);
+
+  const template = findTemplate(templateId);
+  if (template) {
+    // Best effort: the event exists either way, and the organizer lands on it and can add items by hand.
+    const applied = await applyTemplate(supabase, data.id as string, template);
+    if (!applied) console.error(`Kunne ikke fylle arrangement ${data.id} fra malen ${template.id}.`);
+  }
   redirect(`/dashboard/events/${data.id}?ny=1`);
+}
+
+type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
+
+async function applyTemplate(supabase: Supabase, eventId: string, template: EventTemplate) {
+  const { data: categories, error: categoryError } = await supabase
+    .from("categories")
+    .insert(template.groups.map((g, i) => ({ event_id: eventId, name: g.category, sort_order: i + 1 })))
+    .select("id, name");
+  if (categoryError || !categories) return false;
+
+  const categoryId = new Map(categories.map((c) => [c.name as string, c.id as string]));
+  let order = 0;
+  const rows = template.groups.flatMap((g) =>
+    g.items.map((item) => ({
+      event_id: eventId,
+      category_id: categoryId.get(g.category) ?? null,
+      name: item.name,
+      description: item.description ?? null,
+      target_quantity: item.quantity,
+      unit: item.unit,
+      allow_extra: item.allow_extra ?? false,
+      sort_order: ++order,
+      kind: item.kind,
+      starts_at: item.starts_at ?? null,
+      ends_at: item.ends_at ?? null,
+    })),
+  );
+  let { error } = await supabase.from("items").insert(rows);
+  if (error && isMissingColumn(error)) {
+    // Older database: keep the list, with the time written into the name instead.
+    const legacyRows = rows.map((row) => {
+      const { kind, starts_at, ends_at, ...rest } = row;
+      void kind;
+      return {
+        ...rest,
+        name: starts_at && ends_at ? `${rest.name} ${starts_at}–${ends_at}`.slice(0, 80) : rest.name,
+      };
+    });
+    ({ error } = await supabase.from("items").insert(legacyRows));
+  }
+  return !error;
 }
 
 export async function updateEvent(id: string, input: EventInput): Result {
   const parsed = eventSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("events").update(parsed.data).eq("id", id);
+  let { error } = await supabase.from("events").update(parsed.data).eq("id", id);
+  if (error && isMissingColumn(error)) {
+    const { event_type, ...base } = parsed.data;
+    if (event_type) return { ok: false, error: NEEDS_MIGRATION };
+    ({ error } = await supabase.from("events").update(base).eq("id", id));
+  }
   if (error) return fail(error);
   refresh();
   return ok(undefined);
@@ -176,6 +261,19 @@ export async function deleteCategory(id: string): Result {
 // Items
 // ---------------------------------------------------------------------------
 
+/** Optional "HH:MM". */
+const timeOfDay = z
+  .string()
+  .optional()
+  .nullable()
+  .transform((v) => v || null)
+  .pipe(
+    z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Bruk klokkeslett på formen 10:00.")
+      .nullable(),
+  );
+
 const itemSchema = z.object({
   name: z.string().trim().min(1, "Hva trenger dere?").max(80, "Maks 80 tegn."),
   description: optionalText(500),
@@ -192,6 +290,9 @@ const itemSchema = z.object({
     .transform((v) => v || null)
     .pipe(z.uuid().nullable()),
   allow_extra: z.boolean().default(false),
+  kind: z.enum(ITEM_KIND_VALUES).default("bring"),
+  starts_at: timeOfDay,
+  ends_at: timeOfDay,
 });
 export type ItemInput = z.input<typeof itemSchema>;
 
@@ -200,8 +301,16 @@ export async function saveItem(eventId: string, itemId: string | null, input: It
   if (!parsed.success) return invalid(parsed.error);
   const { supabase } = await requireUser();
 
+  // On a database without the kind/time columns, a plain "bring" item can still be saved.
+  const { kind, starts_at, ends_at, ...legacy } = parsed.data;
+  const isPlain = kind === "bring" && !starts_at && !ends_at;
+
   if (itemId) {
-    const { error } = await supabase.from("items").update(parsed.data).eq("id", itemId);
+    let { error } = await supabase.from("items").update(parsed.data).eq("id", itemId);
+    if (error && isMissingColumn(error)) {
+      if (!isPlain) return { ok: false, error: NEEDS_MIGRATION };
+      ({ error } = await supabase.from("items").update(legacy).eq("id", itemId));
+    }
     if (error) return fail(error);
   } else {
     const { data: last } = await supabase
@@ -211,19 +320,38 @@ export async function saveItem(eventId: string, itemId: string | null, input: It
       .order("sort_order", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const { error } = await supabase
-      .from("items")
-      .insert({ event_id: eventId, ...parsed.data, sort_order: (last?.sort_order ?? 0) + 1 });
+    const sort_order = (last?.sort_order ?? 0) + 1;
+    let { error } = await supabase.from("items").insert({ event_id: eventId, ...parsed.data, sort_order });
+    if (error && isMissingColumn(error)) {
+      if (!isPlain) return { ok: false, error: NEEDS_MIGRATION };
+      ({ error } = await supabase.from("items").insert({ event_id: eventId, ...legacy, sort_order }));
+    }
     if (error) return fail(error);
   }
   refresh();
   return ok(undefined);
 }
 
+/**
+ * Deletes an item and the contributions to it. People whose only contribution
+ * was to this item would otherwise be left as empty sign-ups that still count
+ * as "påmeldt", so those are removed as well (same rule as deleteContribution).
+ */
 export async function deleteItem(id: string): Result {
   const { supabase } = await requireUser();
+  const { data: affected } = await supabase.from("contributions").select("signup_id").eq("item_id", id);
   const { error } = await supabase.from("items").delete().eq("id", id);
   if (error) return fail(error);
+
+  const signupIds = [...new Set((affected ?? []).map((c) => c.signup_id as string))];
+  if (signupIds.length > 0) {
+    const { data: remaining } = await supabase.from("contributions").select("signup_id").in("signup_id", signupIds);
+    if (remaining) {
+      const stillActive = new Set(remaining.map((c) => c.signup_id as string));
+      const empty = signupIds.filter((signupId) => !stillActive.has(signupId));
+      if (empty.length > 0) await supabase.from("signups").delete().in("id", empty);
+    }
+  }
   refresh();
   return ok(undefined);
 }

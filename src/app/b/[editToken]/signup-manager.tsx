@@ -12,8 +12,9 @@ import { ItemChooser, type Selection } from "@/components/public/item-chooser";
 import { ContactFields, type ContactValue } from "@/components/public/contact-fields";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
-import { forgetSignup, rememberSignup, saveContact } from "@/lib/my-signups";
+import { forgetSignup, rememberSignup } from "@/lib/my-signups";
 import { formatNumber } from "@/lib/format";
+import { doneLabel } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 import type { OwnSignup } from "@/lib/types";
 import { cancelSignupAction, saveSignupChanges } from "./actions";
@@ -92,7 +93,6 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
         router.refresh();
         return;
       }
-      saveContact({ name: contact.name, email: contact.email, phone: contact.phone });
       toast.success("Endringene er lagret");
       setEditing(false);
       router.refresh();
@@ -108,6 +108,8 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
     forgetSignup(editToken);
     toast.success("Påmeldingen er avbestilt");
     router.push(`/a/${event.token}`);
+    // Make sure the list shows the freed-up quantities, not a cached copy.
+    router.refresh();
   }
 
   if (editing) {
@@ -119,7 +121,7 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
           </Button>
           <div>
             <p className="text-sm text-muted-foreground">{event.title}</p>
-            <h1 className="text-xl font-bold">Endre bidraget ditt</h1>
+            <h1 className="text-xl font-bold">Endre påmeldingen din</h1>
           </div>
         </div>
 
@@ -158,7 +160,7 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
             <CheckCircle2 className="size-8" />
           </div>
           <h1 className="text-2xl font-bold">Tusen takk, {signup.contributor_name.split(" ")[0]}!</h1>
-          <p className="mt-1 text-foreground/80">Bidraget ditt er registrert, og listen er oppdatert.</p>
+          <p className="mt-1 text-foreground/80">Påmeldingen din er registrert, og listen er oppdatert.</p>
         </div>
       )}
 
@@ -166,10 +168,10 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
 
       <section className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="font-semibold">{showThanks ? "Du tar med" : `${signup.contributor_name} tar med`}</h2>
+          <h2 className="font-semibold">{showThanks ? "Du har meldt deg på" : `${signup.contributor_name} har meldt seg på`}</h2>
           {anyDelivered && (
             <span className="inline-flex items-center gap-1 text-sm font-medium text-success">
-              <PackageCheck className="size-4" /> Delvis levert
+              <PackageCheck className="size-4" /> Delvis krysset av
             </span>
           )}
         </div>
@@ -183,7 +185,7 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
                 <span className="flex items-center gap-2">
                   {c.delivered_at && (
                     <span className="rounded-full bg-success-muted px-2 py-0.5 text-xs font-medium text-success">
-                      Levert
+                      {doneLabel(item.kind)}
                     </span>
                   )}
                   <span className="rounded-full bg-brand-muted px-3 py-1 text-sm font-semibold tabular-nums text-primary">
@@ -245,7 +247,7 @@ export function SignupManager({ editToken, data, justCreated }: Props) {
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
         title="Avbestille påmeldingen?"
-        description="Alle bidragene dine fjernes fra listen, slik at andre kan ta dem. Dette kan ikke angres."
+        description="Alt du har meldt deg på fjernes fra listen, slik at andre kan ta det. Dette kan ikke angres."
         confirmLabel="Ja, avbestill"
         cancelLabel="Nei, behold"
         onConfirm={cancel}

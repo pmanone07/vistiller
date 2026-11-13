@@ -16,11 +16,11 @@ export function RegisterForm() {
     <form action={action} className="space-y-4">
       <FormError message={state.error} />
       <div className="space-y-1.5">
-        <Label htmlFor="organization">Navn på korpset</Label>
+        <Label htmlFor="organization">Navn på lag, klasse eller forening</Label>
         <Input
           id="organization"
           name="organization"
-          placeholder="F.eks. Solberg skolekorps"
+          placeholder="F.eks. FAU Solberg skole"
           autoComplete="organization"
           maxLength={100}
         />
@@ -38,7 +38,7 @@ export function RegisterForm() {
         Opprett konto
       </SubmitButton>
       <p className="text-center text-xs text-muted-foreground">
-        Foreldre trenger ikke konto. De melder seg på via lenken du deler.
+        Deltakerne trenger ikke konto. De melder seg på via lenken du deler.
       </p>
     </form>
   );

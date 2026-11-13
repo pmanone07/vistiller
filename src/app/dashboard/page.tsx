@@ -36,7 +36,7 @@ async function DashboardHome() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">{multipleOrgs ? "Dine korps" : organizations[0].name}</p>
+          <p className="text-sm font-medium text-primary">{multipleOrgs ? "Dine organisasjoner" : organizations[0].name}</p>
           <h1 className="text-2xl font-bold tracking-tight">Arrangementer</h1>
         </div>
         <Link href="/dashboard/events/new" className={cn(buttonVariants({ size: "lg" }), "hidden sm:inline-flex")}>
@@ -148,7 +148,7 @@ function EmptyEvents() {
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Lag ditt første arrangement</h2>
         <p className="max-w-sm text-muted-foreground">
-          Loppemarked, konsert eller 17. mai-kiosk? Legg inn hva dere trenger, og del lenken med foreldrene.
+          Skoleavslutning, cup, loppemarked eller dugnad? Legg inn hva dere trenger hjelp til, og del lenken med deltakerne.
         </p>
       </div>
       <Link href="/dashboard/events/new" className={buttonVariants({ size: "xl" })}>

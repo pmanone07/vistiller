@@ -41,7 +41,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useAutoRefresh } from "@/components/public/use-auto-refresh";
 import { formatEventDate, formatNumber } from "@/lib/format";
+import { eventTypeLabel } from "@/lib/kinds";
 import { groupItems } from "@/lib/group";
 import { cn } from "@/lib/utils";
 import type { Item } from "@/lib/types";
@@ -74,8 +76,15 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
   const [confirm, setConfirm] = useState<"delete" | "regenerate" | null>(null);
   const [statusPending, startStatus] = useTransition();
 
+  // Show new sign-ups without a manual reload: fetch fresh data every 5 seconds
+  // and whenever the tab becomes visible again. Paused while a dialog is open,
+  // so a refresh never resets a form the organizer is filling in.
+  const dialogOpen = shareOpen || editOpen || categoriesOpen || itemDialog.open || confirm !== null;
+  useAutoRefresh(5000, !dialogOpen);
+
   const groups = useMemo(() => groupItems(items, categories, true), [items, categories]);
   const date = formatEventDate(event.event_date);
+  const typeLabel = eventTypeLabel(event.event_type);
   const isOpen = event.status === "open";
   const deliveryHref = `/dashboard/events/${event.id}/delivery` as const;
 
@@ -104,6 +113,11 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight text-balance">{event.title}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {typeLabel && (
+                <span className="rounded-full bg-brand-muted px-2 py-0.5 text-xs font-medium text-primary">
+                  {typeLabel}
+                </span>
+              )}
               {date && (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays className="size-4" /> {date}
@@ -160,7 +174,7 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
             rel="noopener"
             className={buttonVariants({ variant: "outline", size: "xl" })}
           >
-            <ExternalLink /> <span className="hidden sm:inline">Se som forelder</span>
+            <ExternalLink /> <span className="hidden sm:inline">Se som deltaker</span>
           </a>
         </div>
       </div>
@@ -192,16 +206,16 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
         />
         <Stat
           icon={PackageCheck}
-          label="Levert"
+          label="Krysset av"
           value={`${stats.deliveredCount}/${stats.contributionCount}`}
           href={deliveryHref}
-          linkLabel={`Leveringsoversikt: ${stats.deliveredCount} av ${stats.contributionCount} bidrag levert`}
+          linkLabel={`Avkrysning: ${stats.deliveredCount} av ${stats.contributionCount} bidrag er krysset av`}
         />
       </dl>
 
       {items.length > 0 && (
         <Link href={deliveryHref} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto")}>
-          <PackageCheck /> Leveringsoversikt
+          <PackageCheck /> Avkrysning
           <ChevronRight className="ml-auto sm:ml-0" />
         </Link>
       )}
@@ -212,7 +226,7 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
           {(
             [
               ["items", "Bidrag"],
-              ["people", "Hvem tar med hva"],
+              ["people", "Hvem gjør hva"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -258,9 +272,10 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
             <ListChecks className="size-7 text-primary" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Hva trenger dere?</h2>
+            <h2 className="text-lg font-semibold">Hva trenger dere hjelp til?</h2>
             <p className="max-w-sm text-muted-foreground">
-              Legg inn f.eks. 10 sjokoladekaker, 20 liter vaffelrøre og 100 boller. Foreldrene ser hva som mangler.
+              Legg inn ting å ta med, oppgaver, vakter og transport, f.eks. 6 kaker, 2 kioskvakter kl. 10–12 og
+              4 personer til rydding. Deltakerne ser hva som mangler.
             </p>
           </div>
           <Button size="xl" onClick={() => openNewItem()}>
@@ -315,7 +330,7 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
         >
           <Link2 className="size-5 shrink-0 text-primary" />
           <span>
-            <span className="font-semibold">Klar til å dele?</span> Kopier lenken og lim den inn i Spond-gruppen.
+            <span className="font-semibold">Klar til å dele?</span> Kopier lenken og send den til deltakerne, der dere vanligvis snakker sammen.
           </span>
         </button>
       )}
@@ -354,6 +369,7 @@ export function EventAdmin({ detail, shareUrl, justCreated }: Props) {
               event_date: event.event_date ?? "",
               location: event.location ?? "",
               description: event.description ?? "",
+              event_type: event.event_type ?? "",
             }}
             onDone={() => setEditOpen(false)}
           />

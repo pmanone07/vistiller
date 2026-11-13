@@ -1,8 +1,8 @@
-# Korpsfix
+# ViStiller
 
-Enkle bidragslister for norske skolekorps: **hvem tar med hva, og hva mangler?**
+**Sammen får vi det til.** Organiser dugnader, arrangementer og bidrag på ett sted, for skoler og FAU, idrettslag, korps, barnehager og frivillige.
 
-Arrangøren lager et arrangement, legger inn hva som trengs (10 sjokoladekaker, 20 liter vaffelrøre …) og deler en lenke i Spond, Messenger eller på SMS. Foreldre melder seg på uten konto, og alle ser hva som fortsatt mangler.
+Arrangøren lager et arrangement, legger inn hva som trengs (ting å ta med, oppgaver, vakter med klokkeslett og transport) og deler en lenke eller QR-kode. Deltakerne melder seg på uten konto, og alle ser hva som fortsatt mangler.
 
 ## Teknologi
 
@@ -20,8 +20,8 @@ Arrangøren lager et arrangement, legger inn hva som trengs (10 sjokoladekaker, 
    - kjør alle filene i `supabase/migrations/` i **SQL Editor**, én og én i rekkefølge (eldste først, etter tidsstempelet i filnavnet). Har du allerede kjørt `20261110000000_init.sql`, kjører du bare de nyere filene, eller
    - med Supabase CLI: `npx supabase init`, `npx supabase link --project-ref <ref>` og `npx supabase db push`.
 3. Under **Authentication → URL Configuration**:
-   - **Site URL**: `https://korpsfix.no` (lokalt: `http://localhost:3000`)
-   - **Redirect URLs**: legg til `https://korpsfix.no/auth/callback` og `http://localhost:3000/auth/callback`
+   - **Site URL**: `https://vistiller.com` (lokalt: `http://localhost:3000`)
+   - **Redirect URLs**: legg til `https://vistiller.com/**`, `https://www.vistiller.com/**` og `http://localhost:3000/auth/callback`
 4. (Valgfritt) Oversett e-postmalene under **Authentication → Email Templates** til norsk.
 
 ### 2. Miljøvariabler
@@ -100,13 +100,13 @@ supabase/
 ### Datamodell
 
 `organizations` → `events` → `categories` / `items` → `contributions`.
-Én **signup** er én innsending fra én person (navn, kontaktinfo og privat redigeringskode). Den kan ha flere **contributions** (vare + antall). Slik kan en forelder ta med flere ting og endre alt via én lenke.
+Én **signup** er én innsending fra én person (navn, kontaktinfo og privat redigeringskode). Den kan ha flere **contributions** (vare + antall). Slik kan en deltaker melde seg på flere ting og endre alt via én lenke.
 
 ### Sikkerhet
 
 - **RLS:** innloggede arrangører ser og endrer bare data i organisasjoner de er medlem av.
 - **Kolonnetilgang:** i tillegg begrenser kolonnerettigheter hva arrangører kan lese og skrive. De kan ikke lese IP-hash eller hash av redigeringskoden på påmeldinger, ikke endre `plan` på organisasjonen (bare navnet), og ikke velge delingskode eller `created_by` når de lager et arrangement.
-- **Offentlig tilgang** går aldri direkte mot tabellene. Foreldre bruker kontrollerte `SECURITY DEFINER`-funksjoner (`get_public_event`, `create_public_signup`, `update_public_signup`, `cancel_public_signup`). Bare `service_role`, altså Korpsfix-serveren, kan kjøre dem.
+- **Offentlig tilgang** går aldri direkte mot tabellene. Deltakere bruker kontrollerte `SECURITY DEFINER`-funksjoner (`get_public_event`, `create_public_signup`, `update_public_signup`, `cancel_public_signup`). Bare `service_role`, altså Korpsfix-serveren, kan kjøre dem.
 - **Ingen overbooking:** varene låses med `SELECT … FOR UPDATE` før gjenstående mengde sjekkes, så samtidige påmeldinger ikke kan gå over målet (med mindre «tillat ekstra» er på).
 - **Delingskoder** er 16 tegn tilfeldig base64url (96 bit). **Redigeringskoder** er 32 tegn og lagres bare som SHA-256-hash.
 - **Personvern:** den offentlige listen viser aldri navn, telefon eller e-post til andre.
@@ -119,4 +119,4 @@ Appen er en installerbar PWA. Hele den offentlige påmeldingsflyten finnes også
 
 ## Senere versjoner
 
-Arkitekturen er klar for, men implementerer ikke: påminnelser, maler, vaktlister, Vipps, eksport, flere administratorer per korps (`organization_members.role` finnes allerede) og abonnement (`organizations.plan` finnes allerede, men gratisgrensen håndheves ikke ennå).
+Arkitekturen er klar for, men implementerer ikke: påminnelser, Vipps, eksport, flere administratorer per organisasjon (`organization_members.role` finnes allerede) og abonnement (`organizations.plan` finnes allerede, men gratisgrensen håndheves ikke ennå).

@@ -17,22 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ITEM_KINDS, ITEM_KIND_VALUES, formatTimeRange, itemKind, timeValue, type ItemKind } from "@/lib/kinds";
 import type { Category, Item } from "@/lib/types";
 import { createCategory, saveItem } from "../../actions";
-
-const UNITS = ["stk", "liter", "kg", "poser", "brett", "pakker", "flasker", "kartonger"];
-
-const SUGGESTIONS: { name: string; unit: string; qty: number }[] = [
-  { name: "Sjokoladekake", unit: "stk", qty: 10 },
-  { name: "Gulrotkake", unit: "stk", qty: 5 },
-  { name: "Boller", unit: "stk", qty: 100 },
-  { name: "Vaffelrøre", unit: "liter", qty: 20 },
-  { name: "Kaffe", unit: "poser", qty: 10 },
-  { name: "Brus", unit: "flasker", qty: 24 },
-  { name: "Pølser", unit: "pakker", qty: 20 },
-  { name: "Pappkopper", unit: "stk", qty: 200 },
-  { name: "Servietter", unit: "pakker", qty: 5 },
-];
 
 /** Toggle-button look shared by the category and unit choosers. */
 const chip = (selected: boolean) =>
@@ -42,6 +29,9 @@ const chip = (selected: boolean) =>
   );
 
 interface FormState {
+  kind: ItemKind;
+  starts_at: string;
+  ends_at: string;
   name: string;
   target_quantity: string;
   unit: string;
@@ -50,10 +40,13 @@ interface FormState {
   allow_extra: boolean;
 }
 
-const empty = (categoryId = ""): FormState => ({
+const empty = (categoryId = "", kind: ItemKind = "bring"): FormState => ({
+  kind,
+  starts_at: "",
+  ends_at: "",
   name: "",
   target_quantity: "",
-  unit: "stk",
+  unit: ITEM_KINDS[kind].defaultUnit,
   category_id: categoryId,
   description: "",
   allow_extra: false,
@@ -81,7 +74,10 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
   const [created, setCreated] = useState<Category[]>([]);
   const categorySectionRef = useRef<HTMLDivElement>(null);
   const focusCategoryRef = useRef<string | null>(null);
+  const kind = ITEM_KINDS[form.kind];
+  const UNITS = kind.units;
   const isCustomUnit = !UNITS.includes(form.unit);
+  const countsPeople = form.unit === "personer";
   const shownCategories = [...categories, ...created.filter((c) => !categories.some((p) => p.id === c.id))];
 
   // Reset each time the dialog opens. `categories` is deliberately not a dependency:
@@ -96,6 +92,9 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
     setForm(
       item
         ? {
+            kind: itemKind(item.kind),
+            starts_at: timeValue(item.starts_at),
+            ends_at: timeValue(item.ends_at),
             name: item.name,
             target_quantity: String(item.target_quantity),
             unit: item.unit,
@@ -116,6 +115,15 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
   });
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
+
+  /** Switching kind also switches to that kind's usual unit, unless a custom one was typed. */
+  function chooseKind(next: ItemKind) {
+    setForm((f) => {
+      if (f.kind === next) return f;
+      const keepUnit = !ITEM_KINDS[f.kind].units.includes(f.unit) || ITEM_KINDS[next].units.includes(f.unit);
+      return { ...f, kind: next, unit: keepUnit ? f.unit : ITEM_KINDS[next].defaultUnit };
+    });
+  }
 
   function openNewCategory() {
     setCategoryError(null);
@@ -180,6 +188,9 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
         category_id: form.category_id || null,
         description: form.description,
         allow_extra: form.allow_extra,
+        kind: form.kind,
+        starts_at: form.starts_at,
+        ends_at: form.ends_at,
       });
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
@@ -188,7 +199,7 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
       }
       toast.success(item ? "Bidraget er oppdatert" : `${form.name} er lagt til`);
       if (addAnother) {
-        setForm(empty(form.category_id));
+        setForm(empty(form.category_id, form.kind));
         document.getElementById("item-name")?.focus();
       } else {
         onOpenChange(false);
@@ -213,7 +224,7 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg">{item ? "Rediger bidrag" : "Legg til bidrag"}</DialogTitle>
-          <DialogDescription>Hva trenger dere, og hvor mye?</DialogDescription>
+          <DialogDescription>Hva trenger dere hjelp til, og hvor mye eller hvor mange?</DialogDescription>
         </DialogHeader>
 
         <form
@@ -223,30 +234,68 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
           }}
           className="space-y-4"
         >
+          <div className="space-y-1.5">
+            <p id="item-kind-label" className="text-sm leading-none font-medium">
+              Type bidrag
+            </p>
+            <div role="group" aria-labelledby="item-kind-label" className="grid grid-cols-2 gap-1.5">
+              {ITEM_KIND_VALUES.map((value) => {
+                const info = ITEM_KINDS[value];
+                const Icon = info.icon;
+                const selected = form.kind === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => chooseKind(value)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm font-medium",
+                      selected ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" /> {info.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {!item && !form.name && (
             <div className="flex flex-wrap gap-1.5">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s.name}
-                  type="button"
-                  onClick={() =>
-                    setForm((f) => ({ ...f, name: s.name, unit: s.unit, target_quantity: String(s.qty) }))
-                  }
-                  className="rounded-full border bg-card px-3 py-1.5 text-sm hover:border-primary/50 hover:bg-brand-muted"
-                >
-                  + {s.name}
-                </button>
-              ))}
+              {kind.suggestions.map((s) => {
+                const time = formatTimeRange(s.starts_at, s.ends_at);
+                return (
+                  <button
+                    key={`${s.name}-${time ?? ""}`}
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        name: s.name,
+                        unit: s.unit,
+                        target_quantity: String(s.qty),
+                        starts_at: s.starts_at ?? "",
+                        ends_at: s.ends_at ?? "",
+                      }))
+                    }
+                    className="rounded-full border bg-card px-3 py-1.5 text-sm hover:border-primary/50 hover:bg-brand-muted"
+                  >
+                    + {s.name}
+                    {time && <span className="text-muted-foreground"> {time}</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="item-name">Hva trengs?</Label>
+            <Label htmlFor="item-name">{form.kind === "bring" ? "Hva trengs?" : "Hva skal gjøres?"}</Label>
             <Input
               id="item-name"
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
-              placeholder="F.eks. Sjokoladekaker"
+              placeholder={kind.namePlaceholder}
               maxLength={80}
               required
               aria-invalid={Boolean(errors.name)}
@@ -261,7 +310,7 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
             </p>
             {shownCategories.length === 0 && (
               <p id="item-category-help" className="text-sm text-muted-foreground">
-                Kategorier deler listen i seksjoner, f.eks. «Kaker» og «Drikke», så foreldrene finner fram.
+                Kategorier deler listen i seksjoner, f.eks. «Mat og drikke» og «Vakter», så deltakerne finner fram.
               </p>
             )}
             <div
@@ -325,7 +374,7 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
                       cancelNewCategory();
                     }
                   }}
-                  placeholder="Navn på kategori, f.eks. Kaker"
+                  placeholder="Navn på kategori, f.eks. Vakter"
                   maxLength={60}
                   enterKeyHint="done"
                   aria-label="Navn på ny kategori"
@@ -361,9 +410,49 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
             )}
           </div>
 
+          {form.kind !== "bring" && (
+            <div className="space-y-1.5">
+              <p id="item-time-label" className="text-sm leading-none font-medium">
+                Tidsrom{" "}
+                <span className="font-normal text-muted-foreground">
+                  {form.kind === "shift" ? "(anbefalt for vakter)" : "(valgfritt)"}
+                </span>
+              </p>
+              <div role="group" aria-labelledby="item-time-label" className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="item-starts" className="text-muted-foreground">
+                    Fra
+                  </Label>
+                  <Input
+                    id="item-starts"
+                    type="time"
+                    value={form.starts_at}
+                    onChange={(e) => update("starts_at", e.target.value)}
+                    aria-invalid={Boolean(errors.starts_at)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="item-ends" className="text-muted-foreground">
+                    Til
+                  </Label>
+                  <Input
+                    id="item-ends"
+                    type="time"
+                    value={form.ends_at}
+                    onChange={(e) => update("ends_at", e.target.value)}
+                    aria-invalid={Boolean(errors.ends_at)}
+                  />
+                </div>
+              </div>
+              {(errors.starts_at || errors.ends_at) && (
+                <p className="text-sm text-destructive">{errors.starts_at ?? errors.ends_at}</p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-[minmax(0,7rem)_1fr] gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="item-qty">Antall</Label>
+              <Label htmlFor="item-qty">{countsPeople ? "Hvor mange?" : "Antall"}</Label>
               <Input
                 id="item-qty"
                 type="number"
@@ -372,7 +461,7 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
                 max={100000}
                 value={form.target_quantity}
                 onChange={(e) => update("target_quantity", e.target.value)}
-                placeholder="10"
+                placeholder={countsPeople ? "2" : "10"}
                 required
                 aria-invalid={Boolean(errors.target_quantity)}
               />
@@ -402,8 +491,8 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
             <Input
               id="item-unit"
               value={isCustomUnit ? form.unit : ""}
-              onChange={(e) => update("unit", e.target.value || "stk")}
-              placeholder="F.eks. kanner, porsjoner, timer"
+              onChange={(e) => update("unit", e.target.value || kind.defaultUnit)}
+              placeholder="F.eks. porsjoner, timer, lag"
               maxLength={20}
               list="kf-units"
             />
@@ -422,7 +511,11 @@ export function ItemDialog({ open, onOpenChange, eventId, categories, item, defa
               id="item-description"
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
-              placeholder="F.eks. «Langpanne. Merk med allergener.»"
+              placeholder={
+                form.kind === "bring"
+                  ? "F.eks. «Langpanne. Merk med allergener.»"
+                  : "F.eks. «Oppmøte ved hovedinngangen. Ta med arbeidshansker.»"
+              }
               maxLength={500}
               rows={2}
             />

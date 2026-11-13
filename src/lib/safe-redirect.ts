@@ -1,5 +1,5 @@
 /** Fixed dummy origin used only to check where a path would resolve to. */
-const CHECK_ORIGIN = "https://korpsfix.invalid";
+const CHECK_ORIGIN = "https://vistiller.invalid";
 
 /**
  * Only allow same-site relative paths as post-login redirect targets.

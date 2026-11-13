@@ -1,5 +1,5 @@
 -- =============================================================================
--- Korpsfix – testdata: Solberg skolekorps med loppemarked
+-- ViStiller – testdata: Solberg skolekorps med loppemarked
 --
 -- Offentlig lenke etter seeding:  /a/demo-loppemarked-2027
 -- Privat redigeringslenke (Kari): /b/demo-rediger-kari-000000000000

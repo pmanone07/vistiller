@@ -17,7 +17,7 @@ export function SettingsView({ email, organizations }: { email: string; organiza
     <div className="space-y-6">
       <section className="space-y-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
         <h2 className="flex items-center gap-2 font-semibold">
-          <Building2 className="size-5 text-primary" /> {organizations.length > 1 ? "Korps" : "Korpset"}
+          <Building2 className="size-5 text-primary" /> {organizations.length > 1 ? "Organisasjoner" : "Organisasjon"}
         </h2>
         {organizations.map((org) => (
           <OrganizationForm key={org.id} organization={org} />
@@ -80,7 +80,7 @@ function NewOrganization() {
   if (!open) {
     return (
       <Button variant="ghost" size="lg" className="text-primary" onClick={() => setOpen(true)}>
-        <Plus /> Legg til et korps til
+        <Plus /> Legg til en organisasjon til
       </Button>
     );
   }
@@ -99,7 +99,7 @@ function NewOrganization() {
         });
       }}
     >
-      <Label htmlFor="new-org">Nytt korps</Label>
+      <Label htmlFor="new-org">Ny organisasjon</Label>
       <div className="flex gap-2">
         <Input id="new-org" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required autoFocus placeholder="Navn" />
         <Button type="submit" size="lg" className="h-11" disabled={pending}>

@@ -14,7 +14,13 @@ export const SUPABASE_ANON_KEY = (
 ).trim();
 
 /** Canonical site URL, used for share links, QR codes and auth redirects. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  // On Vercel, fall back to the production domain so a missing variable can
+  // never produce share links pointing at localhost.
+  (vercelHost ? `https://${vercelHost}` : "http://localhost:3000")
+).replace(/\/$/, "");
 
 export function assertSupabaseConfigured() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

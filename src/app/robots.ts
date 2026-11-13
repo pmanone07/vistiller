@@ -9,6 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       // Event lists and private edit links must never be indexed.
       disallow: ["/a/", "/b/", "/dashboard", "/api/", "/auth/"],
     },
+    sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   };
 }

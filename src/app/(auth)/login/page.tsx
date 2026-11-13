@@ -11,7 +11,7 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Logg inn"
-      subtitle="For arrangører i korpset"
+      subtitle="For deg som arrangerer"
       footer={
         <>
           Ny her?{" "}

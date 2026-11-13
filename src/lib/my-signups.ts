@@ -1,13 +1,12 @@
 "use client";
 
 /**
- * Remembers a parent's own signups on this device (localStorage), so the
+ * Remembers a participant's own signups on this device (localStorage), so the
  * public list can show "Dine bidrag" with a link back to the edit page.
  * Purely a convenience; the private edit link is the real source of truth.
  */
 
-const KEY = "korpsfix:signups:v1";
-const NAME_KEY = "korpsfix:contact:v1";
+const KEY = "vistiller:signups:v1";
 
 export interface RememberedSignup {
   eventToken: string;
@@ -46,27 +45,4 @@ export function forgetSignup(editToken: string) {
 
 export function signupsForEvent(eventToken: string) {
   return read().filter((s) => s.eventToken === eventToken);
-}
-
-export interface RememberedContact {
-  name: string;
-  email?: string;
-  phone?: string;
-}
-
-export function loadContact(): RememberedContact | null {
-  try {
-    const raw = window.localStorage.getItem(NAME_KEY);
-    return raw ? (JSON.parse(raw) as RememberedContact) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveContact(contact: RememberedContact) {
-  try {
-    window.localStorage.setItem(NAME_KEY, JSON.stringify(contact));
-  } catch {
-    // ignore
-  }
 }

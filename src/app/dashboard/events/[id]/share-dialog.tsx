@@ -25,19 +25,19 @@ interface Props {
   eventDate: string | null;
 }
 
-/** Link + ready-made Spond/SMS message + QR code for posters. */
+/** Link + ready-made message + QR code for posters. */
 export function ShareDialog({ open, onOpenChange, url, title, eventDate }: Props) {
   const [qr, setQr] = useState<string | null>(null);
   const [canShare, setCanShare] = useState(false);
 
   const date = formatEventDate(eventDate);
-  const message = `Hei! Til ${title}${date ? ` (${date.toLowerCase()})` : ""} trenger vi hjelp med bidrag. Se hva som mangler og meld deg på her – det tar under ett minutt, og du trenger ingen konto:\n${url}`;
+  const message = `Hei! Til ${title}${date ? ` (${date.toLowerCase()})` : ""} trenger vi at flere stiller opp. Se hva som mangler og meld deg på her – det tar under ett minutt, og du trenger ingen konto:\n${url}`;
 
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- feature detection after mount
     setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
-    QRCode.toDataURL(url, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1b1f3b", light: "#ffffff" } })
+    QRCode.toDataURL(url, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#0f2e2b", light: "#ffffff" } })
       .then(setQr)
       .catch(() => setQr(null));
   }, [open, url]);
@@ -52,7 +52,7 @@ export function ShareDialog({ open, onOpenChange, url, title, eventDate }: Props
 
   async function copyMessage() {
     if (await copyText(message)) {
-      toast.success("Meldingen er kopiert. Lim den inn i Spond, Messenger eller SMS.");
+      toast.success("Meldingen er kopiert. Lim den inn i gruppechatten, i en e-post eller på SMS.");
     } else {
       toast.error("Kunne ikke kopiere meldingen.");
     }
@@ -84,7 +84,7 @@ export function ShareDialog({ open, onOpenChange, url, title, eventDate }: Props
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            «Kopier melding» gir deg en ferdig tekst med lenken, klar til å limes inn i Spond-gruppen.
+            «Kopier melding» gir deg en ferdig tekst med lenken, klar til å limes inn der dere vanligvis snakker sammen.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export function ShareDialog({ open, onOpenChange, url, title, eventDate }: Props
           {qr && (
             <a
               href={qr}
-              download={`korpsfix-${title.toLowerCase().replace(/[^a-z0-9æøå]+/gi, "-")}.png`}
+              download={`vistiller-${title.toLowerCase().replace(/[^a-z0-9æøå]+/gi, "-")}.png`}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
               <Download className="size-4" /> Last ned QR-kode

@@ -78,7 +78,7 @@ export function ContactFields({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Kontaktinfo vises bare for arrangøren, ikke for andre foreldre.
+        Kontaktinfo vises bare for arrangøren, ikke for andre deltakere.
       </p>
     </div>
   );

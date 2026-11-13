@@ -74,7 +74,7 @@ export function overallCoverage(items: { allocated: number; target_quantity: num
   return Math.round((sum / items.length) * 100);
 }
 
-/** plural(2, "forelder", "foreldre") */
+/** plural(2, "deltaker", "deltakere") */
 export function plural(n: number, singular: string, pluralForm: string) {
   return n === 1 ? singular : pluralForm;
 }

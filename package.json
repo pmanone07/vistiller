@@ -1,5 +1,5 @@
 {
-  "name": "korpsfix",
+  "name": "vistiller",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:db": "node supabase/tests/db.test.mjs"
+    "test:db": "node supabase/tests/db.test.mjs",
+    "test:share": "node tests/public-share.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

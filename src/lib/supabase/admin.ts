@@ -14,7 +14,9 @@ export function createAdminClient(): SupabaseClient {
   const key =
     process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
   if (!SUPABASE_URL || !key) {
-    throw new Error("Supabase er ikke konfigurert. Sett SUPABASE_SECRET_KEY i .env.local.");
+    throw new Error(
+      "Supabase er ikke konfigurert. Sett SUPABASE_SECRET_KEY (i .env.local lokalt, som miljøvariabel i Vercel i produksjon).",
+    );
   }
   client ??= createClient(SUPABASE_URL, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

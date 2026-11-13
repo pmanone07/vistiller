@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorker } from "@/components/service-worker";
+import { BRAND } from "@/lib/brand";
 import { SITE_URL } from "@/lib/env";
 import "./globals.css";
 
@@ -18,15 +19,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Korpsfix – bidragslister for skolekorps",
-    template: "%s · Korpsfix",
+    default: `${BRAND.name} – ${BRAND.tagline.toLowerCase()}`,
+    template: `%s · ${BRAND.name}`,
   },
-  description:
-    "Hvem tar med hva? Lag en bidragsliste for dugnaden, del lenken i Spond, og se hva som mangler. Foreldre melder seg på uten konto.",
-  applicationName: "Korpsfix",
+  description: BRAND.description,
+  applicationName: BRAND.name,
   appleWebApp: {
     capable: true,
-    title: "Korpsfix",
+    title: BRAND.name,
     statusBarStyle: "default",
   },
   formatDetection: { telephone: false },
@@ -36,12 +36,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "nb_NO",
-    siteName: "Korpsfix",
+    siteName: BRAND.name,
+    title: `${BRAND.name} – ${BRAND.slogan}`,
+    description: BRAND.description,
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3b4fd8",
+  themeColor: BRAND.color,
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

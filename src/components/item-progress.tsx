@@ -14,9 +14,12 @@ interface Props {
 
 /** Progress bar + "8 av 10 stk fordelt" + remaining, with a clear done state. */
 export function ItemProgress({ allocated, target, unit, pending = 0, size = "md", className }: Props) {
+  // `p` positions the solid part of the bar (what others have taken); `shown`
+  // is what the text reports: the same plus the person's own pending choice.
   const p = itemProgress(allocated, target);
+  const shown = itemProgress(allocated + pending, target);
   const pendingPercent = Math.min(100 - p.percent, Math.round((pending / target) * 100));
-  const done = allocated + pending >= target;
+  const done = shown.complete;
 
   return (
     <div className={cn("space-y-1.5", className)}>
@@ -25,8 +28,8 @@ export function ItemProgress({ allocated, target, unit, pending = 0, size = "md"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={target}
-        aria-valuenow={Math.min(allocated, target)}
-        aria-label={`${allocated} av ${target} ${unit} fordelt`}
+        aria-valuenow={Math.min(shown.allocated, target)}
+        aria-label={`${shown.allocated} av ${target} ${unit} fordelt`}
       >
         <div
           className={cn(
@@ -47,17 +50,18 @@ export function ItemProgress({ allocated, target, unit, pending = 0, size = "md"
       </div>
       <div className="flex items-center justify-between gap-2 text-sm">
         <span className="text-muted-foreground tabular-nums">
-          <span className="font-medium text-foreground">{formatNumber(allocated)}</span> av{" "}
+          <span className="font-medium text-foreground">{formatNumber(shown.allocated)}</span> av{" "}
           {formatNumber(target)} {unit} fordelt
+          {pending > 0 && <span> med ditt valg</span>}
         </span>
-        {p.complete ? (
+        {shown.complete ? (
           <span className="inline-flex items-center gap-1 font-medium text-success">
             <CheckCircle2 className="size-4" />
-            {p.extra > 0 ? `Fullført (+${formatNumber(p.extra)})` : "Fullført"}
+            {shown.extra > 0 ? `Fullført (+${formatNumber(shown.extra)})` : "Fullført"}
           </span>
         ) : (
           <span className="font-medium tabular-nums text-foreground">
-            Mangler {formatNumber(p.remaining)} {unit}
+            Mangler {formatNumber(shown.remaining)} {unit}
           </span>
         )}
       </div>

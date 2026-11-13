@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  Clock,
   Loader2,
   Mail,
   MoreVertical,
@@ -27,6 +28,7 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ItemProgress } from "@/components/item-progress";
 import { formatDateTime, formatNumber } from "@/lib/format";
+import { formatTimeRange, kindInfo } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 import type { ContributionWithSignup } from "@/lib/types";
 import type { AdminItem } from "@/server/dashboard";
@@ -47,6 +49,10 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
   const complete = item.allocated >= item.target_quantity;
   const count = item.contributions.length;
   const deliveredCount = item.contributions.filter((c) => c.delivered_at).length;
+  const kind = kindInfo(item.kind);
+  const KindIcon = kind.icon;
+  const time = formatTimeRange(item.starts_at, item.ends_at);
+  const done = kind.done.toLowerCase();
 
   const move = (direction: "up" | "down") =>
     startTransition(async () => {
@@ -65,6 +71,16 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
       <div className="p-4">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
+            <p className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <KindIcon className="size-3.5" /> {kind.tag}
+              </span>
+              {time && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-muted px-2 py-0.5 text-primary tabular-nums">
+                  <Clock className="size-3.5" /> {time}
+                </span>
+              )}
+            </p>
             <h3 className="font-semibold leading-snug">
               {item.name}
               {item.allow_extra && (
@@ -109,8 +125,8 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
           className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
         >
           <span className="min-w-0">
-            {count === 0 ? "Ingen påmeldte ennå" : `${count} påmeldt – registrer som levert`}
-            {deliveredCount > 0 && <span className="ml-2 whitespace-nowrap text-success">· {deliveredCount} levert</span>}
+            {count === 0 ? "Ingen påmeldte ennå" : `${count} påmeldt – kryss av som ${done}`}
+            {deliveredCount > 0 && <span className="ml-2 whitespace-nowrap text-success">· {deliveredCount} {done}</span>}
           </span>
           <ChevronDown className={cn("size-4 shrink-0 transition-transform", expanded && "rotate-180")} />
         </button>
@@ -121,7 +137,7 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
           {count > 0 && (
             <ul className="divide-y">
               {item.contributions.map((c) => (
-                <ContributionRow key={c.id} contribution={c} unit={item.unit} />
+                <ContributionRow key={c.id} contribution={c} unit={item.unit} doneLabel={kind.done} />
               ))}
             </ul>
           )}
@@ -135,7 +151,7 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
         title={`Slette «${item.name}»?`}
         description={
           count > 0
-            ? `${count} påmelding${count === 1 ? "" : "er"} til dette bidraget blir også slettet. Dette kan ikke angres.`
+            ? `${count} påmelding${count === 1 ? "" : "er"} til dette blir også slettet. Dette kan ikke angres.`
             : "Dette kan ikke angres."
         }
         onConfirm={async () => {
@@ -151,7 +167,15 @@ export function ItemAdminCard({ item, onEdit, isFirst, isLast }: Props) {
   );
 }
 
-function ContributionRow({ contribution: c, unit }: { contribution: ContributionWithSignup; unit: string }) {
+function ContributionRow({
+  contribution: c,
+  unit,
+  doneLabel,
+}: {
+  contribution: ContributionWithSignup;
+  unit: string;
+  doneLabel: string;
+}) {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const delivered = Boolean(c.delivered_at);
 
@@ -176,10 +200,10 @@ function ContributionRow({ contribution: c, unit }: { contribution: Contribution
             </a>
           )}
           {c.signup.source === "manual" && <span>Lagt inn manuelt</span>}
-          {delivered && c.delivered_at && <span className="text-success">Levert {formatDateTime(c.delivered_at)}</span>}
+          {delivered && c.delivered_at && <span className="text-success">{doneLabel} {formatDateTime(c.delivered_at)}</span>}
         </div>
       </div>
-      <DeliveredToggle contributionId={c.id} delivered={delivered} />
+      <DeliveredToggle contributionId={c.id} delivered={delivered} doneLabel={doneLabel} />
       <Button variant="ghost" size="icon-lg" onClick={() => setConfirmRemove(true)} aria-label={`Fjern ${c.signup.contributor_name}`}>
         <Trash2 className="text-muted-foreground" />
       </Button>

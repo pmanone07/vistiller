@@ -1,3 +1,5 @@
+import type { EventType, ItemKind } from "@/lib/kinds";
+
 export type EventStatus = "open" | "closed" | "archived";
 
 export interface Organization {
@@ -14,6 +16,8 @@ export interface EventRow {
   description: string | null;
   location: string | null;
   event_date: string | null;
+  /** Missing until the 20261113000000_event_types_and_item_kinds migration has run. */
+  event_type?: EventType | null;
   public_token: string;
   status: EventStatus;
   created_at: string;
@@ -32,6 +36,10 @@ export interface Item {
   category_id: string | null;
   name: string;
   description: string | null;
+  /** kind / starts_at / ends_at are missing until the 20261113000000 migration has run. */
+  kind?: ItemKind;
+  starts_at?: string | null;
+  ends_at?: string | null;
   target_quantity: number;
   unit: string;
   allow_extra: boolean;
@@ -71,6 +79,10 @@ export interface PublicItem {
   category_id: string | null;
   name: string;
   description: string | null;
+  kind?: ItemKind;
+  /** "HH:MM" */
+  starts_at?: string | null;
+  ends_at?: string | null;
   target_quantity: number;
   unit: string;
   allow_extra: boolean;
@@ -89,6 +101,7 @@ export interface PublicEvent {
   description: string | null;
   location: string | null;
   event_date: string | null;
+  event_type?: EventType | null;
   status: EventStatus;
   organization_name: string;
   contributor_count: number;

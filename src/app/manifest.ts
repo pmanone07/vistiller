@@ -1,18 +1,19 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Korpsfix",
-    short_name: "Korpsfix",
-    description: "Bidragslister for skolekorps: hvem tar med hva, og hva mangler?",
+    name: BRAND.name,
+    short_name: BRAND.name,
+    description: BRAND.description,
     lang: "nb",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f8f9fc",
-    theme_color: "#3b4fd8",
+    background_color: BRAND.background,
+    theme_color: BRAND.color,
     categories: ["productivity", "utilities"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

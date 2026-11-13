@@ -9,9 +9,9 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISS_KEY = "korpsfix:install-dismissed";
+const DISMISS_KEY = "vistiller:install-dismissed";
 
-/** Shows "Installer Korpsfix" when the browser supports PWA install. */
+/** Shows "Installer ViStiller" when the browser supports PWA install. */
 export function InstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
@@ -47,7 +47,7 @@ export function InstallPrompt() {
     <div className="flex items-center gap-3 rounded-2xl bg-brand-muted p-3 pl-4">
       <Download className="size-5 shrink-0 text-primary" />
       <p className="flex-1 text-sm">
-        <span className="font-semibold">Installer Korpsfix</span> på hjemskjermen for rask tilgang.
+        <span className="font-semibold">Installer ViStiller</span> på hjemskjermen for rask tilgang.
       </p>
       <Button
         size="lg"

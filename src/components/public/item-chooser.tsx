@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckCircle2, HandHeart, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ItemProgress } from "@/components/item-progress";
 import { QuantityPicker } from "@/components/quantity-picker";
 import { groupItems } from "@/lib/group";
+import { formatTimeRange, kindInfo } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 import type { PublicEvent, PublicItem } from "@/lib/types";
 
@@ -34,7 +35,7 @@ export function ItemChooser({ event, selection, onChange, held = {}, locked, dis
   if (event.items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-        Arrangøren har ikke lagt inn noen bidrag ennå.
+        Arrangøren har ikke lagt inn noe i listen ennå.
       </div>
     );
   }
@@ -43,7 +44,7 @@ export function ItemChooser({ event, selection, onChange, held = {}, locked, dis
       <div className="rounded-2xl bg-success-muted p-8 text-center">
         <CheckCircle2 className="mx-auto mb-2 size-8 text-success" />
         <p className="font-semibold">Alt er dekket!</p>
-        <p className="text-sm text-muted-foreground">Takk til alle som bidrar.</p>
+        <p className="text-sm text-muted-foreground">Takk til alle som stiller opp.</p>
       </div>
     );
   }
@@ -93,6 +94,9 @@ function ItemCard({
   onChange: (q: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const kind = kindInfo(item.kind);
+  const KindIcon = kind.icon;
+  const time = formatTimeRange(item.starts_at, item.ends_at);
   const others = Math.max(item.allocated - held, 0);
   const remainingForMe = Math.max(item.target_quantity - others, 0);
   const max = item.allow_extra ? null : remainingForMe;
@@ -110,6 +114,16 @@ function ItemCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
+          <p className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <KindIcon className="size-3.5" /> {kind.tag}
+            </span>
+            {time && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-muted px-2 py-0.5 text-primary tabular-nums">
+                <Clock className="size-3.5" /> {time}
+              </span>
+            )}
+          </p>
           <h3 className="text-base font-semibold leading-snug">{item.name}</h3>
           {item.description && <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>}
         </div>
@@ -132,13 +146,13 @@ function ItemCard({
       {max !== null && quantity > max && !locked && (
         <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
           {max === 0
-            ? "Noen har akkurat dekket dette. Fjern det fra valgene dine."
+            ? "Noen andre har akkurat tatt dette. Fjern det fra valgene dine."
             : `Det er bare ${max} ${item.unit} igjen nå. Juster antallet.`}
         </p>
       )}
 
       {locked ? (
-        <p className="mt-3 text-sm font-medium text-success">Levert – takk!</p>
+        <p className="mt-3 text-sm font-medium text-success">{kind.done} – takk!</p>
       ) : expanded ? (
         <div className="mt-4 space-y-3 border-t pt-4">
           <QuantityPicker value={quantity} onChange={onChange} max={max} unit={item.unit} label={item.name} />
@@ -182,7 +196,7 @@ function ItemCard({
               "Endre antall"
             ) : (
               <>
-                <HandHeart /> Jeg tar med
+                <KindIcon /> {kind.cta}
               </>
             )}
           </Button>

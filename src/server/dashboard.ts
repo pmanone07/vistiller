@@ -23,7 +23,8 @@ export async function getEventSummaries(): Promise<EventSummary[]> {
   const { data, error } = await supabase
     .from("events")
     .select(
-      "id, organization_id, title, description, location, event_date, public_token, status, created_at, items(id, target_quantity, contributions(quantity)), signups(count)",
+      // "*" rather than a column list: event_type may not exist yet (see the 20261113000000 migration).
+      "*, items(id, target_quantity, contributions(quantity)), signups(count)",
     )
     .neq("status", "archived")
     .order("event_date", { ascending: true, nullsFirst: false })
@@ -71,14 +72,14 @@ export async function getEventDetail(id: string): Promise<EventDetail> {
     supabase
       .from("events")
       .select(
-        "id, organization_id, title, description, location, event_date, public_token, status, created_at, organization:organizations(id, name)",
+        "*, organization:organizations(id, name)",
       )
       .eq("id", id)
       .maybeSingle(),
     supabase.from("categories").select("id, event_id, name, sort_order").eq("event_id", id).order("sort_order").order("created_at"),
     supabase
       .from("items")
-      .select("id, event_id, category_id, name, description, target_quantity, unit, allow_extra, sort_order")
+      .select("*")
       .eq("event_id", id)
       .order("sort_order")
       .order("created_at"),

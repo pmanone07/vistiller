@@ -12,16 +12,25 @@ interface Props {
   delivered: boolean;
   /** Show the text label at all widths. By default it is visually hidden below `sm` (icon only). */
   alwaysShowLabel?: boolean;
+  /** "Levert", "Utført" or "Møtt", depending on the kind of item. */
+  doneLabel?: string;
   /** Called after the action succeeded, with the new state. */
   onToggled?: (delivered: boolean) => void;
   className?: string;
 }
 
 /**
- * "Marker levert" / "Levert" toggle for one contribution. Runs the server
+ * "Kryss av" / "Levert" toggle for one contribution. Runs the server
  * action, which refreshes the current route so the surrounding list updates.
  */
-export function DeliveredToggle({ contributionId, delivered, alwaysShowLabel = false, onToggled, className }: Props) {
+export function DeliveredToggle({
+  contributionId,
+  delivered,
+  alwaysShowLabel = false,
+  doneLabel = "Levert",
+  onToggled,
+  className,
+}: Props) {
   const [pending, startTransition] = useTransition();
 
   const toggle = () =>
@@ -42,7 +51,7 @@ export function DeliveredToggle({ contributionId, delivered, alwaysShowLabel = f
     >
       {pending ? <Loader2 className="animate-spin" /> : <PackageCheck />}
       <span className={alwaysShowLabel ? undefined : "sr-only sm:not-sr-only"}>
-        {delivered ? "Levert" : "Marker levert"}
+        {delivered ? doneLabel : "Kryss av"}
       </span>
     </Button>
   );

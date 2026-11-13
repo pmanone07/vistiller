@@ -18,13 +18,7 @@ import { EventHeader } from "@/components/public/event-header";
 import { ItemChooser, type Selection } from "@/components/public/item-chooser";
 import { ContactFields, type ContactValue } from "@/components/public/contact-fields";
 import { useAutoRefresh } from "@/components/public/use-auto-refresh";
-import {
-  loadContact,
-  rememberSignup,
-  saveContact,
-  signupsForEvent,
-  type RememberedSignup,
-} from "@/lib/my-signups";
+import { rememberSignup, signupsForEvent, type RememberedSignup } from "@/lib/my-signups";
 import { formatNumber } from "@/lib/format";
 import type { PublicEvent } from "@/lib/types";
 import { submitSignup } from "./actions";
@@ -47,8 +41,6 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reading localStorage after mount
     setMine(signupsForEvent(event.token));
-    const saved = loadContact();
-    if (saved) setContact({ name: saved.name ?? "", email: saved.email ?? "", phone: saved.phone ?? "" });
   }, [event.token]);
 
   const chosen = useMemo(
@@ -87,7 +79,6 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
         return;
       }
 
-      saveContact({ name: contact.name, email: contact.email, phone: contact.phone });
       rememberSignup({ eventToken: event.token, editToken: result.data.editToken, name: contact.name });
       router.push(`/b/${result.data.editToken}?ny=1`);
     });
@@ -107,7 +98,7 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
             >
               <UserCheck className="size-5 shrink-0 text-primary" />
               <span className="flex-1">
-                <span className="font-semibold">Du er påmeldt</span> som {s.name}. Se eller endre bidraget ditt.
+                <span className="font-semibold">Du er påmeldt</span> som {s.name}. Se eller endre det du har meldt deg på.
               </span>
               <ChevronRight className="size-5 text-muted-foreground" />
             </Link>
@@ -142,9 +133,7 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_-12px_rgb(0_0_0/0.25)] backdrop-blur animate-in slide-in-from-bottom-4">
           <div className="mx-auto flex max-w-2xl items-center gap-3">
             <div className="min-w-0 flex-1 text-sm">
-              <p className="font-semibold">
-                {chosen.length} {chosen.length === 1 ? "bidrag" : "bidrag"} valgt
-              </p>
+              <p className="font-semibold">{chosen.length} valgt</p>
               <p className="truncate text-muted-foreground">
                 {chosen.map((c) => `${formatNumber(c.quantity)} ${c.item.unit} ${c.item.name.toLowerCase()}`).join(", ")}
               </p>
@@ -159,7 +148,7 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
       <Dialog open={dialogOpen} onOpenChange={(open) => !pending && setDialogOpen(open)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg">Bekreft bidraget ditt</DialogTitle>
+            <DialogTitle className="text-lg">Bekreft påmeldingen</DialogTitle>
             <DialogDescription>Du får en egen lenke der du kan endre eller avbestille senere.</DialogDescription>
           </DialogHeader>
 
@@ -175,7 +164,7 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
           </ul>
 
           <form onSubmit={submit} className="space-y-5">
-            <ContactFields value={contact} onChange={setContact} errors={errors} autoFocus={!contact.name} />
+            <ContactFields value={contact} onChange={setContact} errors={errors} autoFocus />
             {/* Honeypot: hidden from people, tempting for bots. */}
             <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
               <label>
@@ -191,7 +180,7 @@ export function PublicEventView({ event }: { event: PublicEvent }) {
             </div>
             <Button type="submit" size="xl" className="w-full" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : null}
-              {pending ? "Lagrer …" : "Jeg tar med dette"}
+              {pending ? "Lagrer …" : "Meld meg på"}
             </Button>
           </form>
         </DialogContent>

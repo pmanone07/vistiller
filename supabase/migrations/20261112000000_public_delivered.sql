@@ -1,5 +1,5 @@
 -- =============================================================================
--- Korpsfix – expose delivered quantity per item in the public event JSON
+-- ViStiller – expose delivered quantity per item in the public event JSON
 --
 -- The parent-facing overview shows, per item, how much is registered, how much
 -- has been handed in and how much is still missing. `delivered` is the summed
